@@ -24,5 +24,5 @@ fpop <- function(y, alpha,  muMinLocal=0, muMaxLocal=0, wt=-1, nbThreads=1)
             muMinLocal <- min(y)
             muMaxLocal <- max(y)
         }
-        return (fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt))
+        return (fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt, nbThreads))
 }

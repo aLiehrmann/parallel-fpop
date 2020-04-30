@@ -6,7 +6,7 @@
 using namespace Rcpp;
 
 // fpop_cpp
-List * fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muMaxLocal, std::vector<double> wt, int nbThreads);
+List fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muMaxLocal, std::vector<double> wt, int nbThreads);
 RcppExport SEXP _parallelFpop_fpop_cpp(SEXP ySEXP, SEXP alphaSEXP, SEXP muMinLocalSEXP, SEXP muMaxLocalSEXP, SEXP wtSEXP, SEXP nbThreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

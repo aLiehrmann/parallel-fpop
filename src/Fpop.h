@@ -32,7 +32,7 @@ public:
         double muMaxLocal,
         std::vector<double> wt_ = {0});
 
-
+    Fpop();
     /**
      * @details Procedure for inferring the number of changepoints and their location in the data.
      */
@@ -41,7 +41,7 @@ public:
     /**
      * @returns the location of inferred cghangepoints in the data .
      */
-    std::vector<int> Retreive_changepoints();
+    std::vector<int> Retrieve_changepoints();
 
     /**
      * @returns a vector that contains the total number of intervals forming the area of life of the different candidates before the pruning step at each iteration.
@@ -54,8 +54,8 @@ public:
      */
     std::vector<int> Get_candidates();
 
-    std::vector<double> Retreive_means();
-    std::vector<double> Retreive_costs();
+    std::vector<double> Retrieve_means();
+    std::vector<double> Retrieve_costs();
 
 };
 #endif

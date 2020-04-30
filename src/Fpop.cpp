@@ -188,7 +188,7 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
 //####### Retreive_changepoints #######////####### Retreive_changepoints #######////####### Retreive_changepoints #######//
 
 
-std::vector<int> Fpop::Retreive_changepoints()
+std::vector<int> Fpop::Retrieve_changepoints()
 {
     std::vector<int> list_of_changepoints;
     int i (y.size()-1);
@@ -206,7 +206,7 @@ std::vector<int> Fpop::Retreive_changepoints()
 //####### Retreive_means #######////####### Retreive_means #######////####### Retreive_means #######//
 
 
-std::vector<double> Fpop::Retreive_means()
+std::vector<double> Fpop::Retrieve_means()
 {
     std::vector<double> list_of_means;
     int i (y.size()-1);
@@ -223,7 +223,7 @@ std::vector<double> Fpop::Retreive_means()
 //####### Retreive_costs #######////####### Retreive_costs #######////####### Retreive_costs #######//
 //####### Retreive_costs #######////####### Retreive_costs #######////####### Retreive_costs #######//
 
-std::vector<double> Fpop::Retreive_costs()
+std::vector<double> Fpop::Retrieve_costs()
 {
     std::vector<double> list_of_costs;
     int i (y.size()-1);
