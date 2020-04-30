@@ -30,8 +30,7 @@ List fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muM
         f[tid] = Fpop(y, alpha, muMinLocal_, muMaxLocal_, wt);
 
         f[tid].Search(tid, nbThreads, F, ARG_F, t_hat);
-        
-        #pragma omp critical
+        #pragma omp critical 
         l.push_back(List::create(
             _["changepoints"] = f[tid].Retrieve_changepoints(),
             _["costs"] = f[tid].Retrieve_costs(),

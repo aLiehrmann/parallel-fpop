@@ -8,7 +8,6 @@
 #include <limits>
 #include "Ordered_list_of_intervals.h"
 #include "Interval.h"
-
 #include "omp.h"
 
 
@@ -42,6 +41,8 @@ Fpop::Fpop(std::vector<double> y_,
     nb_candidates = std::vector<int> (y.size()-1, 0);
     nb_intervals = std::vector<int> (y.size()-1, 0);
 }
+
+Fpop::Fpop(){};
 
 
 //####### changepoints_search #######////####### changepoints_search #######////####### changepoints_search #######//
@@ -136,7 +137,6 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
             
             (3) The last element of array_of_candidates is now pointing to the last introduced candidate.
         */
-
 
         cp[t] = t_hat[tid]; //(1)
         costs[t] = F[tid];

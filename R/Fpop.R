@@ -17,12 +17,12 @@ fpop <- function(y, alpha,  muMinLocal=0, muMaxLocal=0, wt=-1, nbThreads=1)
 {
         if (wt==-1)
         {
-            wt = rep(1,length(y))
+            wt = rep(1,length(y));
         }
         if (!muMinLocal & !muMaxLocal)
         {
-            muMinLocal <- min(y)
-            muMaxLocal <- max(y)
+            muMinLocal <- min(y);
+            muMaxLocal <- max(y);
         }
         return (fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt, nbThreads))
 }
