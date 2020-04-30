@@ -1,0 +1,17 @@
+Package: parallelFpop
+Type: Package
+Title: Implementation of a parallelized version of the fpop algorithm
+Version: 0.1.2
+Author: Arnaud Liehrmann, Benoit Gallet
+Maintainer: Arnaud Liehrmann <arnaud.lieh@gmail.fr>
+Description: Implementation of parallelized version of the fpop algorithm with different cost functions. The following costs are available : mean, variance, poisson, exp, binomial.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: Rcpp (>= 0.12.18)
+LinkingTo: Rcpp
+RoxygenNote: 6.1.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
+SystemRequirements: C++11
