@@ -24,13 +24,7 @@ Fpop::Fpop(std::vector<double> y_,
 {
     y = y_;
     n = y_.size();
-
-    if (muMinLocal == 0 && muMaxLocal == 0)
-    {
-        d = Interval(*std::min_element(y_.begin(), y_.end()), *std::max_element(y_.begin(), y_.end()));
-    } else {
-        d = Interval(muMinLocal, muMaxLocal);
-    }
+    d = Interval(muMinLocal, muMaxLocal);
 
     y.insert(y.begin(), 0);
     lambda = lambda_;
@@ -95,13 +89,13 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
         */
 
 
-        F = std::numeric_limits<double>::max();
+        F[tid] = std::numeric_limits<double>::max();
         for (int i {0}; i<vector_of_it_candidates.size()-1; i++)
         {
             (*vector_of_it_candidates[i]).Add_quadratic(wt[t], y[t]); //1
             min_candidate = (*vector_of_it_candidates[i]).Minimum_of_cost_function();
             arg_min_candidate = (*vector_of_it_candidates[i]).Argmin_of_cost_function();
-            if (min_candidate < F) //(3)
+            if (min_candidate < F[tid]) //(3)
             {
                 F[tid] = min_candidate;
                 ARG_F[tid] = arg_min_candidate;
@@ -144,10 +138,10 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
         */
 
 
-        cp[t] = t_hat; //(1)
-        costs[t] = F;
-        means[t] = ARG_F;
-        list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), F+lambda, 0, Quadratic())); //(2)
+        cp[t] = t_hat[tid]; //(1)
+        costs[t] = F[tid];
+        means[t] = ARG_F[tid];
+        list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), F[tid]+lambda, 0, Quadratic())); //(2)
         vector_of_it_candidates[vector_of_it_candidates.size()-1] = --list_of_candidates.end(); //(3)
 
 

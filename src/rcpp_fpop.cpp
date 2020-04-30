@@ -9,12 +9,12 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-List * fpop_cpp(std::vector<double> y, double alpha, double muMin, double muMax, std::vector<double> wt, int nbThreads)
+List * fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muMaxLocal, std::vector<double> wt, int nbThreads)
 {
     Fpop f[nbThreads];
     // Fpop f = Fpop (y, alpha, muMinLocal, muMaxLocal, wt);
 
-    double muRange = muMaxLocal - muMinLocal;
+    double muRange = (std::abs(muMinLocal) + std::abs(muMinLocal))/2;
 
     double * F = new double[nbThreads];
     double * ARG_F = new double[nbThreads];

@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // fpop_cpp
-List fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muMaxLocal, std::vector<double> wt);
-RcppExport SEXP _parallelFpop_fpop_cpp(SEXP ySEXP, SEXP alphaSEXP, SEXP muMinLocalSEXP, SEXP muMaxLocalSEXP, SEXP wtSEXP) {
+List * fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muMaxLocal, std::vector<double> wt, int nbThreads);
+RcppExport SEXP _parallelFpop_fpop_cpp(SEXP ySEXP, SEXP alphaSEXP, SEXP muMinLocalSEXP, SEXP muMaxLocalSEXP, SEXP wtSEXP, SEXP nbThreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -16,13 +16,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type muMinLocal(muMinLocalSEXP);
     Rcpp::traits::input_parameter< double >::type muMaxLocal(muMaxLocalSEXP);
     Rcpp::traits::input_parameter< std::vector<double> >::type wt(wtSEXP);
-    rcpp_result_gen = Rcpp::wrap(fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt));
+    Rcpp::traits::input_parameter< int >::type nbThreads(nbThreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt, nbThreads));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_parallelFpop_fpop_cpp", (DL_FUNC) &_parallelFpop_fpop_cpp, 5},
+    {"_parallelFpop_fpop_cpp", (DL_FUNC) &_parallelFpop_fpop_cpp, 6},
     {NULL, NULL, 0}
 };
 
