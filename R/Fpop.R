@@ -15,14 +15,39 @@
 
 fpop <- function(y, alpha,  muMinLocal=0, muMaxLocal=0, wt=-1, nbThreads=1)
 {
+        #y.min <- min(y)
+        #y.max <- max(y)
+        #y.sd <- sd(y)
+        #y.mean <- mean(y)
+        #if (nbThreads>1){
+        #    v.intervals <- c(y.min, unlist(lapply(1:(nbThreads-1), function(x){qnorm((1/nbThreads)*x, y.mean, y.sd)})), y.max)
+        #}
+        #else {
+        #    if (!muMinLocal & !muMaxLocal)
+        #    {
+        #    muMinLocal <- min(y);
+        #    muMaxLocal <- max(y);
+        #    }
+        #   v.intervals <- c(muMinLocal, muMaxLocal)
+        #}
+
         if (wt==-1)
         {
             wt = rep(1,length(y));
         }
-        if (!muMinLocal & !muMaxLocal)
+
+        if (!muMaxLocal & !muMinLocal)
         {
-            muMinLocal <- min(y);
-            muMaxLocal <- max(y);
+            muMaxLocal <- max(y)
+            muMinLocal <- min(y)
         }
-        return (fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt, nbThreads))
+        
+        #if (!muMinLocal & !muMaxLocal)
+        #{
+        #    muMinLocal <- min(y);
+        #    muMaxLocal <- max(y);
+        #}
+        #print(v.intervals)
+        
+        return (fpop_cpp(y, alpha, muMinLocal, muMaxLocal, wt, nbThreads)) #, v.intervals))
 }

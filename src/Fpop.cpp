@@ -159,20 +159,12 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
         nb_candidates[t-1] += list_of_candidates.size(); //(2)
 
 
-        // We update the the last candidate's area of life.
+        // We update the area of life of the candidates.
 
 
         (*vector_of_it_candidates.back()).Compare_to_past_candidates(vector_of_it_candidates, d);
 
-
-        // We update candidates with last candidate.
-
-        for (auto i{0}; i<vector_of_it_candidates.size()-2; i++) //
-        {
-            (*vector_of_it_candidates[i]).Compare_to_last_candidates((*vector_of_it_candidates.back()), d);
-        }
-
-        // Candidates whose area of life is empty are pruned.
+        //Candidates whose area of life is empty are pruned.
 
 
         list_of_candidates.erase(std::remove_if(list_of_candidates.begin(), list_of_candidates.end(), [](Candidate & a) {
