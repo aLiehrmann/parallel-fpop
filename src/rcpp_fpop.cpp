@@ -16,6 +16,11 @@ List fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muM
     double * ARG_F = new double[nbThreads];
     int * t_hat = new int[nbThreads];
 
+    double firstMin = false;
+    double F_min = 0.0;
+    double ARG_F_min = 0.0;
+    int t_hat_min = 0;
+
     List l;
     #pragma omp parallel num_threads(nbThreads)
     {
@@ -25,10 +30,10 @@ List fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muM
         double muMaxLocal_ = muMinLocal_ + muRange;
         f[tid] = Fpop(y, alpha, muMinLocal_, muMaxLocal_, wt);
         //f[tid] = Fpop(y, alpha, v[tid], v[tid+1], wt);
-        f[tid].Search(tid, nbThreads, F, ARG_F, t_hat);
+        f[tid].Search(tid, nbThreads, F, ARG_F, t_hat, &firstMin, &F_min, &ARG_F_min, &t_hat_min);
         double tEnd = omp_get_wtime();
 
-        #pragma omp critical 
+        #pragma omp critical
         l.push_back(List::create(_["id"] = tid,
             _["changepoints"] = f[tid].Retrieve_changepoints(),
             _["costs"] = f[tid].Retrieve_costs(),
@@ -38,7 +43,7 @@ List fpop_cpp(std::vector<double> y, double alpha, double muMinLocal, double muM
             _["execution_time"] = tEnd - tStart
         ));
     }
-    
+
     delete[] F;
     delete[] ARG_F;
     delete[] t_hat;

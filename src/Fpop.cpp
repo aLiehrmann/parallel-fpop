@@ -49,7 +49,8 @@ Fpop::Fpop(){};
 //####### changepoints_search #######////####### changepoints_search #######////####### changepoints_search #######//
 
 
-void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_hat)
+void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_hat,
+    bool * firstMin, double * F_min, double * ARG_F_min, int * t_hat_min)
 {
     std::list<Candidate> list_of_candidates {Candidate(0,  Ordered_list_of_intervals (d), 0, 0, Quadratic())};
     // double F;
@@ -106,28 +107,52 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
 
 
         //TODO Reduce F between the threads, and give F, ARG_F, and t_hat corresponding to the smallest F
-        #pragma omp barrier
-        #pragma omp single
+        #pragma omp critical
         {
-            double min_F = F[0];
-            int min_tid = 0;
-
-            for (int i = 1; i < nbThreads; ++i)
+            if (!(*firstMin))
             {
-                if (F[i] < min_F)
+                (*F_min) = F[tid];
+                (*ARG_F_min) = ARG_F[tid];
+                (*t_hat_min) = t_hat[tid];
+                (*firstMin) = true
+            } else {
+                if (F[tid] < (*F_min))
                 {
-                    min_F = F[i];
-                    min_tid = i;
+                    (*F_min) = F[tid];
+                    (*ARG_F_min) = ARG_F[tid];
+                    (*t_hat_min) = t_hat[tid];
                 }
             }
+        }
+        #pragma omp barrier
 
-            for (int i = 0; i < nbThreads; ++i)
-            {
-                F[i] = min_F;
-                ARG_F[i] = ARG_F[min_tid];
-                t_hat[i] = t_hat[min_tid];
-            }
+        #pragma omp single
+        {
+            (*firstMin) = false
         } // Implicit barrier
+
+        // #pragma omp barrier
+        // #pragma omp single
+        // {
+        //     double min_F = F[0];
+        //     int min_tid = 0;
+        //
+        //     for (int i = 1; i < nbThreads; ++i)
+        //     {
+        //         if (F[i] < min_F)
+        //         {
+        //             min_F = F[i];
+        //             min_tid = i;
+        //         }
+        //     }
+        //
+        //     for (int i = 0; i < nbThreads; ++i)
+        //     {
+        //         F[i] = min_F;
+        //         ARG_F[i] = ARG_F[min_tid];
+        //         t_hat[i] = t_hat[min_tid];
+        //     }
+        // } // Implicit barrier
 
 
         /*
@@ -138,10 +163,14 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
             (3) The last element of array_of_candidates is now pointing to the last introduced candidate.
         */
 
-        cp[t] = t_hat[tid]; //(1)
-        costs[t] = F[tid];
-        means[t] = ARG_F[tid];
-        list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), F[tid]+lambda, 0, Quadratic())); //(2)
+        // cp[t] = t_hat[tid]; //(1)
+        // costs[t] = F[tid];
+        // means[t] = ARG_F[tid];
+        cp[t] = (*t_hat_min); //(1)
+        costs[t] = (*F_min);
+        means[t] = (*ARG_F_min);
+        // list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), F[tid]+lambda, 0, Quadratic())); //(2)
+        list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), (*F_min) + lambda, 0, Quadratic())); //(2)
         vector_of_it_candidates[vector_of_it_candidates.size()-1] = --list_of_candidates.end(); //(3)
 
 
