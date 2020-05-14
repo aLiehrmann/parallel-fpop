@@ -6,8 +6,10 @@
 #include <math.h>
 #include <list>
 #include <limits>
+#include <atomic>
 #include "Ordered_list_of_intervals.h"
 #include "Interval.h"
+
 #include "omp.h"
 
 
@@ -42,14 +44,103 @@ Fpop::Fpop(std::vector<double> y_,
     nb_intervals = std::vector<int> (y.size()-1, 0);
 }
 
-Fpop::Fpop(){};
+Fpop::Fpop(){}
 
 
 //####### changepoints_search #######////####### changepoints_search #######////####### changepoints_search #######//
 //####### changepoints_search #######////####### changepoints_search #######////####### changepoints_search #######//
 
 
-void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_hat,
+void Fpop::Search()
+{
+    std::list<Candidate> list_of_candidates {Candidate(0,  Ordered_list_of_intervals (d), 0, 0, Quadratic())};
+    double F;
+    double ARG_F;
+    int t_hat;
+    double min_candidate;
+    double arg_min_candidate;
+    int index;
+    std::vector<int> chosen_candidates;
+    std::vector<std::list<Candidate>::iterator> vector_of_it_candidates;
+
+    for (int t {1}; t < y.size(); t++)
+    {
+        /*
+            We initialize a vector of iterators.
+            Each iterator points to a candidate in list_of_candidates.
+            At this step, the last element of the vector does not point to any candidate.
+        */
+
+        std::vector<std::list<Candidate>::iterator> vector_of_it_candidates (list_of_candidates.size() + 1);
+        index = 0;
+        for (auto it_candidate {list_of_candidates.begin()}; it_candidate != list_of_candidates.end(); ++it_candidate)
+        {
+            vector_of_it_candidates[index] = it_candidate;
+            index += 1;
+        }
+
+        /*
+            (1) The quadratic form is updated for all the candidates still considered.
+
+            (2) The length-dependent penalty for the last segment is updated for all candidates still considered.
+
+            (3) we update the minimum cost of segmentation and associated candidate.
+        */
+
+        F = std::numeric_limits<double>::max();
+        for (int i {0}; i < vector_of_it_candidates.size() - 1; i++)
+        {
+            (*vector_of_it_candidates[i]).Add_quadratic(wt[t], y[t]); //1
+            min_candidate = (*vector_of_it_candidates[i]).Minimum_of_cost_function();
+            arg_min_candidate = (*vector_of_it_candidates[i]).Argmin_of_cost_function();
+            if (min_candidate < F) //(3)
+            {
+                F = min_candidate;
+                ARG_F = arg_min_candidate;
+                t_hat = (*vector_of_it_candidates[i]).Get_tau();
+            }
+        }
+
+        /*
+            (1) We save the position of the last changepoint of the candidate that minimizes the cost of segmentation up to the point t.
+
+            (2) A new candidate is introduced whose last changepoint corresponds to point t.
+
+            (3) The last element of array_of_candidates is now pointing to the last introduced candidate.
+        */
+
+        cp[t] = t_hat; //(1)
+        costs[t] = F;
+        means[t] = ARG_F;
+        list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), F + lambda, 0, Quadratic())); //(2)
+        vector_of_it_candidates[vector_of_it_candidates.size() - 1] = --list_of_candidates.end(); //(3)
+
+        /*
+           (1) We save the sum of the intervals in candidates's area of life.
+
+           (2) We save the number of candidates still considered.
+        */
+
+        for (int i {0}; i < vector_of_it_candidates.size(); i++)
+        {
+            nb_intervals[t - 1] += (*vector_of_it_candidates[i]).GetZ().size(); //(1)
+        }
+        nb_candidates[t - 1] += list_of_candidates.size(); //(2)
+
+        // We update the the last candidate's area of life.
+
+        (*vector_of_it_candidates.back()).Compare_to_past_candidates(vector_of_it_candidates, d);
+
+        // Candidates whose area of life is empty are pruned.
+
+        list_of_candidates.erase(std::remove_if(list_of_candidates.begin(), list_of_candidates.end(), [](Candidate & a) {
+            return a.GetZ().Is_empty();
+        }), list_of_candidates.end());
+    }
+}
+
+
+void Fpop::Search_parallel(int tid, int nbThreads, double * F, double * ARG_F, int * t_hat,
     bool * firstMin, double * F_min, double * ARG_F_min, int * t_hat_min)
 {
     std::list<Candidate> list_of_candidates {Candidate(0,  Ordered_list_of_intervals (d), 0, 0, Quadratic())};
@@ -63,24 +154,21 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
     std::vector<std::list<Candidate>::iterator> vector_of_it_candidates;
 
 
-    for (int t {1}; t<y.size(); t++)
+    for (int t {1}; t < y.size(); t++)
     {
-
         /*
             We initialize a vector of iterators.
             Each iterator points to a candidate in list_of_candidates.
             At this step, the last element of the vector does not point to any candidate.
         */
 
-
-        std::vector<std::list<Candidate>::iterator> vector_of_it_candidates (list_of_candidates.size()+1);
+        std::vector<std::list<Candidate>::iterator> vector_of_it_candidates (list_of_candidates.size() + 1);
         index = 0;
         for (auto it_candidate {list_of_candidates.begin()}; it_candidate != list_of_candidates.end(); ++it_candidate)
         {
             vector_of_it_candidates[index] = it_candidate;
-            index+=1;
+            index += 1;
         }
-
 
         /*
             (1) The quadratic form is updated for all the candidates still considered.
@@ -90,9 +178,8 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
             (3) we update the minimum cost of segmentation and associated candidate.
         */
 
-
         F[tid] = std::numeric_limits<double>::max();
-        for (int i {0}; i<vector_of_it_candidates.size()-1; i++)
+        for (int i {0}; i<vector_of_it_candidates.size() - 1; i++)
         {
             (*vector_of_it_candidates[i]).Add_quadratic(wt[t], y[t]); //1
             min_candidate = (*vector_of_it_candidates[i]).Minimum_of_cost_function();
@@ -105,7 +192,6 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
             }
         }
 
-
         //TODO Reduce F between the threads, and give F, ARG_F, and t_hat corresponding to the smallest F
         #pragma omp critical
         {
@@ -114,7 +200,7 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
                 (*F_min) = F[tid];
                 (*ARG_F_min) = ARG_F[tid];
                 (*t_hat_min) = t_hat[tid];
-                (*firstMin) = true
+                (*firstMin) = true;
             } else {
                 if (F[tid] < (*F_min))
                 {
@@ -128,7 +214,7 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
 
         #pragma omp single
         {
-            (*firstMin) = false
+            (*firstMin) = false;
         } // Implicit barrier
 
         // #pragma omp barrier
@@ -154,7 +240,6 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
         //     }
         // } // Implicit barrier
 
-
         /*
             (1) We save the position of the last changepoint of the candidate that minimizes the cost of segmentation up to the point t.
             
@@ -173,28 +258,23 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
         list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), (*F_min) + lambda, 0, Quadratic())); //(2)
         vector_of_it_candidates[vector_of_it_candidates.size()-1] = --list_of_candidates.end(); //(3)
 
-
         /*
            (1) We save the sum of the intervals in candidates's area of life.
             
            (2) We save the number of candidates still considered.
         */
 
-
-        for (int i {0}; i<vector_of_it_candidates.size(); i++)
+        for (int i {0}; i < vector_of_it_candidates.size(); i++)
         {
-            nb_intervals[t-1] += (*vector_of_it_candidates[i]).GetZ().size(); //(1)
+            nb_intervals[t - 1] += (*vector_of_it_candidates[i]).GetZ().size(); //(1)
         }
-        nb_candidates[t-1] += list_of_candidates.size(); //(2)
-
+        nb_candidates[t - 1] += list_of_candidates.size(); //(2)
 
         // We update the area of life of the candidates.
-
 
         (*vector_of_it_candidates.back()).Compare_to_past_candidates(vector_of_it_candidates, d);
 
         //Candidates whose area of life is empty are pruned.
-
 
         list_of_candidates.erase(std::remove_if(list_of_candidates.begin(), list_of_candidates.end(), [](Candidate & a) {
             return a.GetZ().Is_empty();
@@ -202,6 +282,183 @@ void Fpop::Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_ha
 
      }
 
+}
+
+
+void Fpop::Search_parallel_loops(int nbThreads)
+{
+    std::list<Candidate> list_of_candidates {Candidate(0,  Ordered_list_of_intervals (d), 0, 0, Quadratic())};
+    double F;
+    double ARG_F;
+    int t_hat;
+    double min_candidate;
+    double arg_min_candidate;
+    int index;
+    std::vector<int> chosen_candidates;
+    std::vector<std::list<Candidate>::iterator> vector_of_it_candidates;
+
+    std::atomic<bool> computationDone(false);
+    std::atomic<int> nbJobs(0);
+    std::atomic<int> nbThreadsDone(0);
+
+    std::list<Interval> list_of_intervals_array[nbThreads];
+    int globalLoopSize;
+
+    #pragma omp parallel num_threads(nbThreads)
+    {
+        int tid = omp_get_thread_num();
+
+        if (0 == tid)
+        {
+            // Main computing thread
+            for (int t {1}; t < y.size(); t++)
+            {
+                /*
+                    We initialize a vector of iterators.
+                    Each iterator points to a candidate in list_of_candidates.
+                    At this step, the last element of the vector does not point to any candidate.
+                */
+
+                std::vector<std::list<Candidate>::iterator> vector_of_it_candidates (list_of_candidates.size() + 1);
+                index = 0;
+                for (auto it_candidate {list_of_candidates.begin()}; it_candidate != list_of_candidates.end(); ++it_candidate)
+                {
+                    vector_of_it_candidates[index] = it_candidate;
+                    index += 1;
+                }
+
+                /*
+                    (1) The quadratic form is updated for all the candidates still considered.
+
+                    (2) The length-dependent penalty for the last segment is updated for all candidates still considered.
+
+                    (3) we update the minimum cost of segmentation and associated candidate.
+                */
+
+                F = std::numeric_limits<double>::max();
+                for (int i {0}; i < vector_of_it_candidates.size() - 1; i++)
+                {
+                    (*vector_of_it_candidates[i]).Add_quadratic(wt[t], y[t]); //1
+                    min_candidate = (*vector_of_it_candidates[i]).Minimum_of_cost_function();
+                    arg_min_candidate = (*vector_of_it_candidates[i]).Argmin_of_cost_function();
+                    if (min_candidate < F) //(3)
+                    {
+                        F = min_candidate;
+                        ARG_F = arg_min_candidate;
+                        t_hat = (*vector_of_it_candidates[i]).Get_tau();
+                    }
+                }
+
+                /*
+                    (1) We save the position of the last changepoint of the candidate that minimizes the cost of segmentation up to the point t.
+
+                    (2) A new candidate is introduced whose last changepoint corresponds to point t.
+
+                    (3) The last element of array_of_candidates is now pointing to the last introduced candidate.
+                */
+
+                cp[t] = t_hat; //(1)
+                costs[t] = F;
+                means[t] = ARG_F;
+                list_of_candidates.push_back( Candidate(t, Ordered_list_of_intervals (d), F + lambda, 0, Quadratic())); //(2)
+                vector_of_it_candidates[vector_of_it_candidates.size() - 1] = --list_of_candidates.end(); //(3)
+
+                /*
+                   (1) We save the sum of the intervals in candidates's area of life.
+
+                   (2) We save the number of candidates still considered.
+                */
+
+                for (int i {0}; i < vector_of_it_candidates.size(); i++)
+                {
+                    nb_intervals[t - 1] += (*vector_of_it_candidates[i]).GetZ().size(); //(1)
+                }
+                nb_candidates[t - 1] += list_of_candidates.size(); //(2)
+
+                // We update the the last candidate's area of life.
+
+                globalLoopSize = vector_of_it_candidates.size();
+                nbJobs++;
+
+                int sizePerThread = globalLoopSize / nbThreads;
+                int threadsWithOneMore = globalLoopSize - (sizePerThread * nbThreads);
+                int beginLoop;
+                int endLoop;
+
+                // Ensure that we are not going out of bounds
+                if (tid < threadsWithOneMore)
+                {
+                    beginLoop = tid * sizePerThread + tid;
+                    endLoop = beginLoop + sizePerThread + 1;
+                } else {
+                    beginLoop = tid * sizePerThread + threadsWithOneMore;
+                    endLoop = beginLoop + sizePerThread;
+                }
+
+                // Compute a fraction of the loop
+                list_of_intervals_array[tid] = (*vector_of_it_candidates.back()).Compare_to_past_candidates_parallel(vector_of_it_candidates, d, beginLoop, endLoop);
+                // (*vector_of_it_candidates.back()).Compare_to_past_candidates(vector_of_it_candidates, d);
+
+                // The main thread is done with its part of the computation
+                nbThreadsDone++;
+
+                while (nbThreadsDone < nbThreads)
+                {
+                    // Wait for all the threads to finish their part of the work
+                }
+
+                Ordered_list_of_intervals list_of_merged_intervals (list_of_intervals_array[tid]);
+                for (int i = 1; i < nbThreads; ++i)
+                {
+                    list_of_merged_intervals.Append(list_of_intervals_array[i]);
+                }
+                list_of_merged_intervals.Complementary_in(d);
+                (*vector_of_it_candidates.back()).SetZ(list_of_merged_intervals);
+
+                // Candidates whose area of life is empty are pruned.
+
+                list_of_candidates.erase(std::remove_if(list_of_candidates.begin(), list_of_candidates.end(), [](Candidate & a) {
+                    return a.GetZ().Is_empty();
+                }), list_of_candidates.end());
+            }
+
+            // The total computation is done, so indicate it to the other threads
+            computationDone = true;
+        } else {
+            // Threads that "help" to compute some of the loops
+            int nbJobsLocal = 0;
+            while (!computationDone)
+            {
+                while (nbJobsLocal == nbJobs)
+                {
+                    // While loop to wait for the main thread to attribute some work
+                }
+
+                nbJobsLocal++;
+
+                int sizePerThread = globalLoopSize / nbThreads;
+                int threadsWithOneMore = globalLoopSize - (sizePerThread * nbThreads);
+                int beginLoop;
+                int endLoop;
+
+                // Ensure that we are not going out of bounds
+                if (tid < threadsWithOneMore)
+                {
+                    beginLoop = tid * sizePerThread + tid;
+                    endLoop = beginLoop + sizePerThread + 1;
+                } else {
+                    beginLoop = tid * sizePerThread + threadsWithOneMore;
+                    endLoop = beginLoop + sizePerThread;
+                }
+
+                // Compute a fraction of the loop
+                list_of_intervals_array[tid] = (*vector_of_it_candidates.back()).Compare_to_past_candidates_parallel(vector_of_it_candidates, d, beginLoop, endLoop);
+
+                // Indicate to the main thread that this current thread is done for this computation
+                nbThreadsDone++;
+            }
+        }
+    }
 }
 
 

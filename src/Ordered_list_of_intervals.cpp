@@ -25,7 +25,7 @@ Ordered_list_of_intervals::Ordered_list_of_intervals(std::list<Interval> & list_
         for (auto it_interval {++list_of_intervals_to_merge.begin()}; it_interval!=list_of_intervals_to_merge.end(); ++it_interval)
         {
             if (list_of_intervals.back().Get_end() >= (*it_interval).Get_begin())
-            {   
+            {
                 if (list_of_intervals.back().Get_end() < (*it_interval).Get_end())
                 {
                     list_of_intervals.back().Set_end((*it_interval).Get_end());
@@ -38,6 +38,33 @@ Ordered_list_of_intervals::Ordered_list_of_intervals(std::list<Interval> & list_
         }
     }
 }
+
+
+void Ordered_list_of_intervals::Append(std::list<Interval> & list_of_intervals_to_merge)
+{
+    if (!list_of_intervals_to_merge.empty())
+    {
+        list_of_intervals_to_merge.sort(Interval::Compare_begin);
+
+        list_of_intervals.push_back(list_of_intervals_to_merge.front());
+
+        for (auto it_interval {++list_of_intervals_to_merge.begin()}; it_interval!=list_of_intervals_to_merge.end(); ++it_interval)
+        {
+            if (list_of_intervals.back().Get_end() >= (*it_interval).Get_begin())
+            {
+                if (list_of_intervals.back().Get_end() < (*it_interval).Get_end())
+                {
+                    list_of_intervals.back().Set_end((*it_interval).Get_end());
+                }
+            }
+            else
+            {
+                list_of_intervals.push_back((*it_interval));
+            }
+        }
+    }
+}
+
 
 Ordered_list_of_intervals::Ordered_list_of_intervals()
 {

@@ -26,13 +26,13 @@ public:
      * @param[in] quad_ quadratic form build from the point located after tau.
      */
     Candidate(int tau_, Ordered_list_of_intervals z_, double cost_up_to_tau_, double pen_, Quadratic quad_);
-    
+
 
     /**
      * @returns the minimum of the cost function.
      */
     double Minimum_of_cost_function();
-    
+
     /**
      * @details updates the penalty which depending of the length of the segment formed by the points located after tau.
      * @param[in] pen_ new penalty.
@@ -47,17 +47,21 @@ public:
      */
     void Compare_to_past_candidates (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D);
 
+    std::list<Interval> Compare_to_past_candidates_parallel (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D, int loopBegin, int loopEnd);
+
     /**
      * @details Updates the quadratic form of the current candidate by adding to it the wt-weighted quadratic (y-mu)^2.
      * @param[in] wt a weight.
      * @param[in] y a point.
      */
     void Add_quadratic(double wt, double y);
-    
+
     /**
      * @returns the sorted list of intervals forming the current candidate's area of life.
      */
     Ordered_list_of_intervals GetZ();
+
+    void SetZ(Ordered_list_of_intervals & list_of_intervals);
 
     /**
      * @returns tau of the current candidate.

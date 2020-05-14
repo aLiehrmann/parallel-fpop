@@ -2,8 +2,8 @@
 #include "Quadratic.h"
 #include "Interval.h"
 #include <vector>
-#include <array> 
-#include <iostream> 
+#include <array>
+#include <iostream>
 #include <list>
 #include <math.h>
 #include "Ordered_list_of_intervals.h"
@@ -29,7 +29,7 @@ Candidate::Candidate(int tau_, Ordered_list_of_intervals z_, double cost_up_to_t
 
 
 double Candidate::Minimum_of_cost_function()
-{   
+{
     return quad.Minimum() + pen + cost_up_to_tau;
 }
 
@@ -65,26 +65,48 @@ void Candidate::Add_quadratic(double wt, double y)
 
 void Candidate::Compare_to_past_candidates (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D)
 {
-
     std::list<Interval> list_of_intervals;
     Interval interval;
     Quadratic new_quad;
-    for (int i {0}; i<vector_of_it_candidates.size()-1; i++)
-    {   
+    for (int i {0}; i < vector_of_it_candidates.size() - 1; i++)
+    {
 
         new_quad = (*vector_of_it_candidates[i]).quad - quad;
-        new_quad.Add_coef((*vector_of_it_candidates[i]).cost_up_to_tau - cost_up_to_tau,0,0);
+        new_quad.Add_coef((*vector_of_it_candidates[i]).cost_up_to_tau - cost_up_to_tau, 0, 0);
         interval = new_quad.Negative_interval(D);
         if (!interval.IsEmpty_or_singleton())
         {
             list_of_intervals.push_back(interval);
         }
         vector_of_it_candidates[i]->z.Intersect_with(interval);
-        
+
     }
     Ordered_list_of_intervals list_of_merged_intervals (list_of_intervals);
-    list_of_merged_intervals.Complementary_in(D); 
+    list_of_merged_intervals.Complementary_in(D);
     z = list_of_merged_intervals;
+}
+
+
+std::list<Interval> Candidate::Compare_to_past_candidates_parallel (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D, int begin, int end)
+{
+    std::list<Interval> list_of_intervals;
+    Interval interval;
+    Quadratic new_quad;
+    for (int i = begin; i < end; i++)
+    {
+        new_quad = (*vector_of_it_candidates[i]).quad - quad;
+        new_quad.Add_coef((*vector_of_it_candidates[i]).cost_up_to_tau - cost_up_to_tau, 0, 0);
+        interval = new_quad.Negative_interval(D);
+        if (!interval.IsEmpty_or_singleton())
+        {
+            list_of_intervals.push_back(interval);
+        }
+        vector_of_it_candidates[i]->z.Intersect_with(interval);
+    }
+    // Ordered_list_of_intervals list_of_merged_intervals (list_of_intervals);
+    // list_of_merged_intervals.Complementary_in(D);
+    // z = list_of_merged_intervals;
+    return list_of_intervals;
 }
 
 
@@ -104,4 +126,10 @@ int Candidate::Get_tau()
 Ordered_list_of_intervals Candidate::GetZ()
 {
     return z;
+}
+
+
+void Candidate::SetZ(Ordered_list_of_intervals & list_of_intervals)
+{
+    z = list_of_intervals;
 }

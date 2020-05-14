@@ -36,7 +36,9 @@ public:
     /**
      * @details Procedure for inferring the number of changepoints and their location in the data.
      */
-    void Search(int tid, int nbThreads, double * F, double * ARG_F, int * t_hat, bool * firstMin, double * F_min, double * ARG_F_min, int * t_hat_min);
+    void Search();
+    void Search_parallel(int tid, int nbThreads, double * F, double * ARG_F, int * t_hat, bool * firstMin, double * F_min, double * ARG_F_min, int * t_hat_min);
+    void Search_parallel_loops(int nbThreads);
 
     /**
      * @returns the location of inferred cghangepoints in the data .
