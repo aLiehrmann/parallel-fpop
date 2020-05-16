@@ -47,7 +47,19 @@ public:
      */
     void Compare_to_past_candidates (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D);
 
+    void Compare_to_past_candidates_old (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D);
+
     std::list<Interval> Compare_to_past_candidates_parallel (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D, int loopBegin, int loopEnd);
+
+    /**
+     * @details Searches the intervals over which the cost function of the current candidate is beaten by the cost function of future candidates.
+     * Updates the current candidate's area of life by intersecting it with the intersection of the intervals found.
+     * @param[in] vector_of_it_candidates vector of iterator that points on candidates.
+     * @param[in] chosen_candidates indices of the candidates chosen for the comparison.
+     */
+    void Compare_to_future_candidates (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, std::vector<int> & chosen_candidates, Interval & D);
+
+    void Compare_to_last_candidates (Candidate & last_candidate, Interval & D);
 
     /**
      * @details Updates the quadratic form of the current candidate by adding to it the wt-weighted quadratic (y-mu)^2.

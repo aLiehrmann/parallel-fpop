@@ -87,6 +87,29 @@ void Candidate::Compare_to_past_candidates (std::vector<std::list<Candidate>::it
 }
 
 
+void Candidate::Compare_to_past_candidates_old (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D)
+{
+
+    std::list<Interval> list_of_intervals;
+    Interval interval;
+    Quadratic new_quad;
+    for (int i {0}; i<vector_of_it_candidates.size()-1; i++)
+    {
+
+        new_quad = (*vector_of_it_candidates[i]).quad - quad;
+        new_quad.Add_coef((*vector_of_it_candidates[i]).cost_up_to_tau - cost_up_to_tau,0,0);
+        interval = new_quad.Negative_interval(D);
+        if (!interval.IsEmpty_or_singleton())
+        {
+            list_of_intervals.push_back(interval);
+        }
+    }
+    Ordered_list_of_intervals list_of_merged_intervals (list_of_intervals);
+    list_of_merged_intervals.Complementary_in(D);
+    z = list_of_merged_intervals;
+}
+
+
 std::list<Interval> Candidate::Compare_to_past_candidates_parallel (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, Interval & D, int begin, int end)
 {
     std::list<Interval> list_of_intervals;
@@ -107,6 +130,59 @@ std::list<Interval> Candidate::Compare_to_past_candidates_parallel (std::vector<
     // list_of_merged_intervals.Complementary_in(D);
     // z = list_of_merged_intervals;
     return list_of_intervals;
+}
+
+
+//####### Compare_to_future_candidate #######////####### Compare_to_future_candidate #######////####### Compare_to_future_candidate #######//
+//####### Compare_to_future_candidate #######////####### Compare_to_future_candidate #######////####### Compare_to_future_candidate #######//
+
+
+void Candidate::Compare_to_future_candidates (std::vector<std::list<Candidate>::iterator> & vector_of_it_candidates, std::vector<int> & chosen_future_candidates, Interval & D)
+{
+    std::list<Interval> list_of_intervals;
+    Interval intersection_of_intervals;
+    Interval interval;
+    Quadratic new_quad;
+    for (int indexe_chosen_future_candidates: chosen_future_candidates)
+    {
+        new_quad = quad - (*vector_of_it_candidates[indexe_chosen_future_candidates]).quad;
+        new_quad.Add_coef(pen+cost_up_to_tau-((*vector_of_it_candidates[indexe_chosen_future_candidates]).pen+(*vector_of_it_candidates[indexe_chosen_future_candidates]).cost_up_to_tau),0,0);
+        interval = new_quad.Negative_interval(D);
+        if (!interval.IsEmpty_or_singleton())
+        {
+            list_of_intervals.push_back(interval);
+        }
+        else
+        {
+            z = Ordered_list_of_intervals();
+            break;
+        }
+
+
+    }
+    if (!(z.Is_empty()))
+    {
+        intersection_of_intervals = Interval(list_of_intervals);
+        z.Intersect_with(intersection_of_intervals);
+    }
+}
+
+void Candidate::Compare_to_last_candidates (Candidate & last_candidate, Interval & D)
+{
+    Interval intersection_of_intervals;
+    Interval interval;
+    Quadratic new_quad;
+    new_quad = quad - last_candidate.quad;
+    new_quad.Add_coef(pen+cost_up_to_tau-(last_candidate.pen+last_candidate.cost_up_to_tau),0,0);
+    interval = new_quad.Negative_interval(D);
+    if (!interval.IsEmpty_or_singleton())
+    {
+        z.Intersect_with(interval);
+    }
+    else
+    {
+        z = Ordered_list_of_intervals();
+    }
 }
 
 

@@ -153,7 +153,6 @@ void Fpop::Search_parallel(int tid, int nbThreads, double * F, double * ARG_F, i
     std::vector<int> chosen_candidates;
     std::vector<std::list<Candidate>::iterator> vector_of_it_candidates;
 
-
     for (int t {1}; t < y.size(); t++)
     {
         /*
@@ -192,53 +191,25 @@ void Fpop::Search_parallel(int tid, int nbThreads, double * F, double * ARG_F, i
             }
         }
 
-        //TODO Reduce F between the threads, and give F, ARG_F, and t_hat corresponding to the smallest F
-        #pragma omp critical
-        {
-            if (!(*firstMin))
-            {
-                (*F_min) = F[tid];
-                (*ARG_F_min) = ARG_F[tid];
-                (*t_hat_min) = t_hat[tid];
-                (*firstMin) = true;
-            } else {
-                if (F[tid] < (*F_min))
-                {
-                    (*F_min) = F[tid];
-                    (*ARG_F_min) = ARG_F[tid];
-                    (*t_hat_min) = t_hat[tid];
-                }
-            }
-        }
         #pragma omp barrier
-
         #pragma omp single
         {
-            (*firstMin) = false;
-        } // Implicit barrier
+            double min_F = F[0];
+            int min_tid = 0;
 
-        // #pragma omp barrier
-        // #pragma omp single
-        // {
-        //     double min_F = F[0];
-        //     int min_tid = 0;
-        //
-        //     for (int i = 1; i < nbThreads; ++i)
-        //     {
-        //         if (F[i] < min_F)
-        //         {
-        //             min_F = F[i];
-        //             min_tid = i;
-        //         }
-        //     }
-        //
-        //     for (int i = 0; i < nbThreads; ++i)
-        //     {
-        //         F[i] = min_F;
-        //         ARG_F[i] = ARG_F[min_tid];
-        //         t_hat[i] = t_hat[min_tid];
-        //     }
-        // } // Implicit barrier
+            for (int i = 1; i < nbThreads; ++i)
+            {
+                if (F[i] < min_F)
+                {
+                    min_F = F[i];
+                    min_tid = i;
+                }
+            }
+
+            (*F_min) = min_F;
+            (*ARG_F_min) = ARG_F[min_tid];
+            (*t_hat_min) = t_hat[min_tid];
+        } // Implicit barrier
 
         /*
             (1) We save the position of the last changepoint of the candidate that minimizes the cost of segmentation up to the point t.
@@ -280,7 +251,13 @@ void Fpop::Search_parallel(int tid, int nbThreads, double * F, double * ARG_F, i
             return a.GetZ().Is_empty();
         }), list_of_candidates.end());
 
-     }
+        // printf("Tid %d, t = %d\n", tid, t);
+
+    }
+
+    // printf("Tid %d: done\n", tid);
+    printf("Tid %d, Candidates: %d\n", tid, nb_candidates.size());
+    printf("Tid %d, Intervals: %d\n", tid, nb_intervals.size());
 
 }
 
